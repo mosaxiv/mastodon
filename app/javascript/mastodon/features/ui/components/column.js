@@ -2,6 +2,7 @@ import React from 'react';
 import ColumnHeader from './column_header';
 import PropTypes from 'prop-types';
 import scrollTop from '../../../scroll';
+import { debounce } from 'lodash';
 
 class Column extends React.PureComponent {
 
@@ -15,17 +16,19 @@ class Column extends React.PureComponent {
 
   handleHeaderClick = () => {
     const scrollable = this.node.querySelector('.scrollable');
+
     if (!scrollable) {
       return;
     }
+
     this._interruptScrollAnimation = scrollTop(scrollable);
   }
 
-  handleWheel = () => {
+  handleScroll = debounce(() => {
     if (typeof this._interruptScrollAnimation !== 'undefined') {
       this._interruptScrollAnimation();
     }
-  }
+  }, 200)
 
   setRef = (c) => {
     this.node = c;
@@ -41,13 +44,14 @@ class Column extends React.PureComponent {
       columnHeaderId = heading.replace(/ /g, '-');
       header = <ColumnHeader icon={icon} active={active} type={heading} onClick={this.handleHeaderClick} hideOnMobile={hideHeadingOnMobile} columnHeaderId={columnHeaderId}/>;
     }
+
     return (
       <div
         ref={this.setRef}
         role='region'
         aria-labelledby={columnHeaderId}
         className='column'
-        onWheel={this.handleWheel}>
+        onScroll={this.handleScroll}>
         {header}
         {children}
       </div>
