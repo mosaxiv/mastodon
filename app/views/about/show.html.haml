@@ -36,7 +36,7 @@
       - if Setting.timeline_preview
         .column-2
           .landing-page__hero
-            = image_tag @instance_presenter.hero&.file&.url || @instance_presenter.thumbnail&.file&.url || asset_pack_path('preview.jpg'), alt: @instance_presenter.site_title
+            = image_tag @instance_presenter.hero&.file&.url || @instance_presenter.thumbnail&.file&.url || asset_pack_path('fluffy-elephant-friend.png'), alt: @instance_presenter.site_title
 
           .landing-page__information
             .landing-page__short-description
@@ -63,12 +63,12 @@
                   %span= t 'about.status_count_after', count: @instance_presenter.status_count
               .row__mascot
                 .landing-page__mascot
-                  = image_tag asset_pack_path('elephant_ui_plane.svg')
+                  = image_tag asset_pack_path('mastodon-ui.png')
 
       - else
         .column-2.non-preview
           .landing-page__hero
-            = image_tag @instance_presenter.hero&.file&.url || @instance_presenter.thumbnail&.file&.url || asset_pack_path('preview.jpg'), alt: @instance_presenter.site_title
+            = image_tag @instance_presenter.hero&.file&.url || @instance_presenter.thumbnail&.file&.url || asset_pack_path('fluffy-elephant-friend.png'), alt: @instance_presenter.site_title
 
           .landing-page__information
             .landing-page__short-description
@@ -95,7 +95,7 @@
                   %span= t 'about.status_count_after', count: @instance_presenter.status_count
               .row__mascot
                 .landing-page__mascot
-                  = image_tag asset_pack_path('elephant_ui_plane.svg')
+                  = image_tag asset_pack_path('mastodon-ui.png')
 
       - if Setting.timeline_preview
         .column-3
