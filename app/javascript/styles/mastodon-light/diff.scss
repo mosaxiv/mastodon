@@ -286,20 +286,6 @@
   }
 }
 
-.flash-message {
-  box-shadow: none;
-
-  &.notice {
-    background: rgba($success-green, 0.5);
-    color: lighten($success-green, 12%);
-  }
-
-  &.alert {
-    background: rgba($error-red, 0.5);
-    color: lighten($error-red, 12%);
-  }
-}
-
 .simple_form,
 .table-form {
   .warning {
@@ -366,6 +352,8 @@
 .moved-account-widget,
 .memoriam-widget,
 .activity-stream,
-.nothing-here {
+.nothing-here,
+.directory__tag > a,
+.directory__tag > div {
   box-shadow: none;
 }
