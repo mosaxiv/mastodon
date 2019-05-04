@@ -9,11 +9,11 @@ module Mastodon
     end
 
     def minor
-      5
+      8
     end
 
     def patch
-      0
+      1
     end
 
     def pre
@@ -33,11 +33,11 @@ module Mastodon
     end
 
     def repository
-      'mosaxiv/mastodon'
+      ENV.fetch('GITHUB_REPOSITORY') { 'tootsuite/mastodon' }
     end
 
     def source_base_url
-      "https://github.com/#{repository}"
+      ENV.fetch('SOURCE_BASE_URL') { "https://github.com/#{repository}" }
     end
 
     # specify git tag or commit hash here
