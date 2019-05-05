@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 class BlockService < BaseService
-  include StreamEntryRenderer
-
   def call(account, target_account)
     return if account.id == target_account.id
 
     UnfollowService.new.call(account, target_account) if account.following?(target_account)
     UnfollowService.new.call(target_account, account) if target_account.following?(account)
+    RejectFollowService.new.call(account, target_account) if target_account.requested?(account)
 
     block = account.block!(target_account)
 
@@ -27,11 +26,11 @@ class BlockService < BaseService
   end
 
   def build_json(block)
-    Oj.dump(ActivityPub::LinkedDataSignature.new(ActiveModelSerializers::SerializableResource.new(
+    ActiveModelSerializers::SerializableResource.new(
       block,
       serializer: ActivityPub::BlockSerializer,
       adapter: ActivityPub::Adapter
-    ).as_json).sign!(block.account))
+    ).to_json
   end
 
   def build_xml(block)
