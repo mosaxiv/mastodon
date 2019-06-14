@@ -11,6 +11,8 @@ class ActivityPub::DeliveryWorker
   HEADERS = { 'Content-Type' => 'application/activity+json' }.freeze
 
   def perform(json, source_account_id, inbox_url, options = {})
+    return if DeliveryFailureTracker.unavailable?(inbox_url)
+
     @options        = options.with_indifferent_access
     @json           = json
     @source_account = Account.find(source_account_id)
@@ -49,7 +51,7 @@ class ActivityPub::DeliveryWorker
   end
 
   def response_error_unsalvageable?(response)
-    (400...500).cover?(response.code) && response.code != 429
+    (400...500).cover?(response.code) && ![401, 408, 429].include?(response.code)
   end
 
   def failure_tracker

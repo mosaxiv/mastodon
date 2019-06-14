@@ -7,7 +7,6 @@ import { Redirect, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import NotificationsContainer from './containers/notifications_container';
 import LoadingBarContainer from './containers/loading_bar_container';
-import TabsBar from './components/tabs_bar';
 import ModalContainer from './containers/modal_container';
 import { isMobile } from '../../is_mobile';
 import { debounce } from 'lodash';
@@ -45,9 +44,11 @@ import {
   Mutes,
   PinnedStatuses,
   Lists,
+  Search,
 } from './util/async-components';
-import { me } from '../../initial_state';
-import { previewState } from './components/media_modal';
+import { me, forceSingleColumn } from '../../initial_state';
+import { previewState as previewMediaState } from './components/media_modal';
+import { previewState as previewVideoState } from './components/video_modal';
 
 // Dummy import, to make sure that <Status /> ends up in the application bundle.
 // Without this it ends up in ~8 very commonly used bundles.
@@ -59,7 +60,8 @@ const messages = defineMessages({
 
 const mapStateToProps = state => ({
   isComposing: state.getIn(['compose', 'is_composing']),
-  hasComposingText: state.getIn(['compose', 'text']) !== '',
+  hasComposingText: state.getIn(['compose', 'text']).trim().length !== 0,
+  hasMediaAttachments: state.getIn(['compose', 'media_attachments']).size > 0,
   dropdownMenuIsOpen: state.getIn(['dropdown_menu', 'openId']) !== null,
 });
 
@@ -91,6 +93,7 @@ const keyMap = {
   goToMuted: 'g m',
   goToRequests: 'g r',
   toggleHidden: 'x',
+  toggleSensitive: 'h',
 };
 
 class SwitchingColumnsArea extends React.PureComponent {
@@ -120,7 +123,7 @@ class SwitchingColumnsArea extends React.PureComponent {
   }
 
   shouldUpdateScroll (_, { location }) {
-    return location.state !== previewState;
+    return location.state !== previewMediaState && location.state !== previewVideoState;
   }
 
   handleResize = debounce(() => {
@@ -133,25 +136,24 @@ class SwitchingColumnsArea extends React.PureComponent {
   });
 
   setRef = c => {
-    this.node = c.getWrappedInstance().getWrappedInstance();
+    this.node = c.getWrappedInstance();
   }
 
   render () {
     const { children } = this.props;
     const { mobile } = this.state;
-    const redirect = mobile ? <Redirect from='/' to='/timelines/home' exact /> : <Redirect from='/' to='/getting-started' exact />;
+    const singleColumn = forceSingleColumn || mobile;
+    const redirect = singleColumn ? <Redirect from='/' to='/timelines/home' exact /> : <Redirect from='/' to='/getting-started' exact />;
 
     return (
-      <ColumnsAreaContainer ref={this.setRef} singleColumn={mobile}>
+      <ColumnsAreaContainer ref={this.setRef} singleColumn={singleColumn}>
         <WrappedSwitch>
           {redirect}
           <WrappedRoute path='/getting-started' component={GettingStarted} content={children} />
           <WrappedRoute path='/keyboard-shortcuts' component={KeyboardShortcuts} content={children} />
           <WrappedRoute path='/timelines/home' component={HomeTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
           <WrappedRoute path='/timelines/public' exact component={PublicTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
-          <WrappedRoute path='/timelines/public/media' component={PublicTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll, onlyMedia: true }} />
           <WrappedRoute path='/timelines/public/local' exact component={CommunityTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
-          <WrappedRoute path='/timelines/public/local/media' component={CommunityTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll, onlyMedia: true }} />
           <WrappedRoute path='/timelines/direct' component={DirectTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
           <WrappedRoute path='/timelines/tag/:id' component={HashtagTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
           <WrappedRoute path='/timelines/list/:id' component={ListTimeline} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
@@ -160,7 +162,7 @@ class SwitchingColumnsArea extends React.PureComponent {
           <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
           <WrappedRoute path='/pinned' component={PinnedStatuses} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
 
-          <WrappedRoute path='/search' component={Compose} content={children} componentParams={{ isSearchPage: true }} />
+          <WrappedRoute path='/search' component={Search} content={children} />
 
           <WrappedRoute path='/statuses/new' component={Compose} content={children} />
           <WrappedRoute path='/statuses/:statusId' exact component={Status} content={children} componentParams={{ shouldUpdateScroll: this.shouldUpdateScroll }} />
@@ -187,10 +189,10 @@ class SwitchingColumnsArea extends React.PureComponent {
 
 }
 
-@connect(mapStateToProps)
+export default @connect(mapStateToProps)
 @injectIntl
 @withRouter
-export default class UI extends React.PureComponent {
+class UI extends React.PureComponent {
 
   static contextTypes = {
     router: PropTypes.object.isRequired,
@@ -201,6 +203,7 @@ export default class UI extends React.PureComponent {
     children: PropTypes.node,
     isComposing: PropTypes.bool,
     hasComposingText: PropTypes.bool,
+    hasMediaAttachments: PropTypes.bool,
     location: PropTypes.object,
     intl: PropTypes.object.isRequired,
     dropdownMenuIsOpen: PropTypes.bool,
@@ -211,9 +214,9 @@ export default class UI extends React.PureComponent {
   };
 
   handleBeforeUnload = (e) => {
-    const { intl, isComposing, hasComposingText } = this.props;
+    const { intl, isComposing, hasComposingText, hasMediaAttachments } = this.props;
 
-    if (isComposing && hasComposingText) {
+    if (isComposing && (hasComposingText || hasMediaAttachments)) {
       // Setting returnValue to any string causes confirmation dialog.
       // Many browsers no longer display this text to users,
       // but we set user-friendly message for other browsers, e.g. Edge.
@@ -243,6 +246,7 @@ export default class UI extends React.PureComponent {
   }
 
   handleDragOver = (e) => {
+    if (this.dataTransferIsText(e.dataTransfer)) return false;
     e.preventDefault();
     e.stopPropagation();
 
@@ -256,11 +260,13 @@ export default class UI extends React.PureComponent {
   }
 
   handleDrop = (e) => {
+    if (this.dataTransferIsText(e.dataTransfer)) return;
     e.preventDefault();
 
     this.setState({ draggingOver: false });
+    this.dragTargets = [];
 
-    if (e.dataTransfer && e.dataTransfer.files.length === 1) {
+    if (e.dataTransfer && e.dataTransfer.files.length >= 1) {
       this.props.dispatch(uploadCompose(e.dataTransfer.files));
     }
   }
@@ -278,6 +284,10 @@ export default class UI extends React.PureComponent {
     this.setState({ draggingOver: false });
   }
 
+  dataTransferIsText = (dataTransfer) => {
+    return (dataTransfer && Array.from(dataTransfer.types).includes('text/plain') && dataTransfer.items.length === 1);
+  }
+
   closeUploadModal = () => {
     this.setState({ draggingOver: false });
   }
@@ -292,6 +302,7 @@ export default class UI extends React.PureComponent {
 
   componentWillMount () {
     window.addEventListener('beforeunload', this.handleBeforeUnload, false);
+
     document.addEventListener('dragenter', this.handleDragEnter, false);
     document.addEventListener('dragover', this.handleDragOver, false);
     document.addEventListener('drop', this.handleDrop, false);
@@ -302,8 +313,13 @@ export default class UI extends React.PureComponent {
       navigator.serviceWorker.addEventListener('message', this.handleServiceWorkerPostMessage);
     }
 
+    if (typeof window.Notification !== 'undefined' && Notification.permission === 'default') {
+      window.setTimeout(() => Notification.requestPermission(), 120 * 1000);
+    }
+
     this.props.dispatch(expandHomeTimeline());
     this.props.dispatch(expandNotifications());
+
     setTimeout(() => this.props.dispatch(fetchFilters()), 500);
   }
 
@@ -354,11 +370,16 @@ export default class UI extends React.PureComponent {
   handleHotkeyFocusColumn = e => {
     const index  = (e.key * 1) + 1; // First child is drawer, skip that
     const column = this.node.querySelector(`.column:nth-child(${index})`);
+    if (!column) return;
+    const container = column.querySelector('.scrollable');
 
-    if (column) {
-      const status = column.querySelector('.focusable');
+    if (container) {
+      const status = container.querySelector('.focusable');
 
       if (status) {
+        if (container.scrollTop > status.offsetTop) {
+          status.scrollIntoView(true);
+        }
         status.focus();
       }
     }
@@ -458,10 +479,8 @@ export default class UI extends React.PureComponent {
     };
 
     return (
-      <HotKeys keyMap={keyMap} handlers={handlers} ref={this.setHotkeysRef}>
+      <HotKeys keyMap={keyMap} handlers={handlers} ref={this.setHotkeysRef} attach={window} focused>
         <div className={classNames('ui', { 'is-composing': isComposing })} ref={this.setRef} style={{ pointerEvents: dropdownMenuIsOpen ? 'none' : null }}>
-          <TabsBar />
-
           <SwitchingColumnsArea location={location} onLayoutChange={this.handleLayoutChange}>
             {children}
           </SwitchingColumnsArea>

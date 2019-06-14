@@ -5,17 +5,19 @@ require_relative '../../config/boot'
 require_relative '../../config/environment'
 require_relative 'cli_helper'
 
-# rubocop:disable Rails/Output
-
 module Mastodon
   class EmojiCLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
     option :prefix
     option :suffix
     option :overwrite, type: :boolean
     option :unlisted, type: :boolean
-    desc 'import PATH', 'Import emoji from a TAR archive at PATH'
+    desc 'import PATH', 'Import emoji from a TAR GZIP archive at PATH'
     long_desc <<-LONG_DESC
-      Imports custom emoji from a TAR archive specified by PATH.
+      Imports custom emoji from a TAR GZIP archive specified by PATH.
 
       Existing emoji will be skipped unless the --overwrite option
       is provided, in which case they will be overwritten.
@@ -64,6 +66,12 @@ module Mastodon
       say("Imported #{imported}, skipped #{skipped}, failed to import #{failed}", color(imported, skipped, failed))
     end
 
+    desc 'purge', 'Remove all custom emoji'
+    def purge
+      CustomEmoji.in_batches.destroy_all
+      say('OK', :green)
+    end
+
     private
 
     def color(green, _yellow, red)
@@ -77,5 +85,3 @@ module Mastodon
     end
   end
 end
-
-# rubocop:enable Rails/Output

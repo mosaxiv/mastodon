@@ -9,8 +9,8 @@ const messages = defineMessages({
   heading: { id: 'keyboard_shortcuts.heading', defaultMessage: 'Keyboard Shortcuts' },
 });
 
-@injectIntl
-export default class KeyboardShortcuts extends ImmutablePureComponent {
+export default @injectIntl
+class KeyboardShortcuts extends ImmutablePureComponent {
 
   static propTypes = {
     intl: PropTypes.object.isRequired,
@@ -59,6 +59,10 @@ export default class KeyboardShortcuts extends ImmutablePureComponent {
               <tr>
                 <td><kbd>x</kbd></td>
                 <td><FormattedMessage id='keyboard_shortcuts.toggle_hidden' defaultMessage='to show/hide text behind CW' /></td>
+              </tr>
+              <tr>
+                <td><kbd>h</kbd></td>
+                <td><FormattedMessage id='keyboard_shortcuts.toggle_sensitivity' defaultMessage='to show/hide media' /></td>
               </tr>
               <tr>
                 <td><kbd>up</kbd>, <kbd>k</kbd></td>

@@ -1,3 +1,6 @@
+require:
+  - rubocop-rails
+
 AllCops:
   TargetRubyVersion: 2.3
   Exclude:
@@ -75,6 +78,14 @@ Rails/SkipsModelValidations:
   Enabled: false
 
 Rails/HttpStatus:
+  Enabled: false
+
+Rails/Exit:
+  Exclude:
+    - 'lib/mastodon/*'
+    - 'lib/cli.rb'
+
+Rails/HelperInstanceVariable:
   Enabled: false
 
 Style/ClassAndModuleChildren:
