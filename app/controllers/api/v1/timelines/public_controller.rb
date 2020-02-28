@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Api::V1::Timelines::PublicController < Api::BaseController
+  before_action :require_user!, only: [:show], if: :require_auth?
   after_action :insert_pagination_headers, unless: -> { @statuses.empty? }
 
   respond_to :json
@@ -12,6 +13,10 @@ class Api::V1::Timelines::PublicController < Api::BaseController
 
   private
 
+  def require_auth?
+    !Setting.timeline_preview
+  end
+
   def load_statuses
     cached_public_statuses
   end
@@ -21,10 +26,9 @@ class Api::V1::Timelines::PublicController < Api::BaseController
   end
 
   def public_statuses
-    statuses = public_timeline_statuses.paginate_by_max_id(
+    statuses = public_timeline_statuses.paginate_by_id(
       limit_param(DEFAULT_STATUSES_LIMIT),
-      params[:max_id],
-      params[:since_id]
+      params_slice(:max_id, :since_id, :min_id)
     )
 
     if truthy_param?(:only_media)
@@ -53,7 +57,7 @@ class Api::V1::Timelines::PublicController < Api::BaseController
   end
 
   def prev_path
-    api_v1_timelines_public_url pagination_params(since_id: pagination_since_id)
+    api_v1_timelines_public_url pagination_params(min_id: pagination_since_id)
   end
 
   def pagination_max_id

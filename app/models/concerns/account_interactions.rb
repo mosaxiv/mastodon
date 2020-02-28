@@ -45,9 +45,9 @@ module AccountInteractions
     end
 
     def domain_blocking_map(target_account_ids, account_id)
-      accounts_map    = Account.where(id: target_account_ids).select('id, domain').map { |a| [a.id, a.domain] }.to_h
+      accounts_map    = Account.where(id: target_account_ids).select('id, domain').each_with_object({}) { |a, h| h[a.id] = a.domain }
       blocked_domains = domain_blocking_map_by_domain(accounts_map.values.compact, account_id)
-      accounts_map.map { |id, domain| [id, blocked_domains[domain]] }.to_h
+      accounts_map.reduce({}) { |h, (id, domain)| h.merge(id => blocked_domains[domain]) }
     end
 
     def domain_blocking_map_by_domain(target_domains, account_id)
@@ -84,6 +84,7 @@ module AccountInteractions
     has_many :muted_by, -> { order('mutes.id desc') }, through: :muted_by_relationships, source: :account
     has_many :conversation_mutes, dependent: :destroy
     has_many :domain_blocks, class_name: 'AccountDomainBlock', dependent: :destroy
+    has_many :announcement_mutes, dependent: :destroy
   end
 
   def follow!(other_account, reblogs: nil, uri: nil)
@@ -184,6 +185,10 @@ module AccountInteractions
 
   def favourited?(status)
     status.proper.favourites.where(account: self).exists?
+  end
+
+  def bookmarked?(status)
+    status.proper.bookmarks.where(account: self).exists?
   end
 
   def reblogged?(status)

@@ -18,6 +18,21 @@ class UserMailerPreview < ActionMailer::Preview
     UserMailer.password_change(User.first)
   end
 
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/two_factor_disabled
+  def two_factor_disabled
+    UserMailer.two_factor_disabled(User.first)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/two_factor_enabled
+  def two_factor_enabled
+    UserMailer.two_factor_enabled(User.first)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/two_factor_recovery_codes_changed
+  def two_factor_recovery_codes_changed
+    UserMailer.two_factor_recovery_codes_changed(User.first)
+  end
+
   # Preview this email at http://localhost:3000/rails/mailers/user_mailer/reconfirmation_instructions
   def reconfirmation_instructions
     user = User.first
@@ -38,5 +53,10 @@ class UserMailerPreview < ActionMailer::Preview
   # Preview this email at http://localhost:3000/rails/mailers/user_mailer/backup_ready
   def backup_ready
     UserMailer.backup_ready(User.first, Backup.first)
+  end
+
+  # Preview this email at http://localhost:3000/rails/mailers/user_mailer/warning
+  def warning
+    UserMailer.warning(User.first, AccountWarning.new(text: '', action: :silence), [Status.first.id])
   end
 end

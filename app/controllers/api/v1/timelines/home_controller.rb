@@ -13,7 +13,7 @@ class Api::V1::Timelines::HomeController < Api::BaseController
     render json: @statuses,
            each_serializer: REST::StatusSerializer,
            relationships: StatusRelationshipsPresenter.new(@statuses, current_user&.account_id),
-           status: regeneration_in_progress? ? 206 : 200
+           status: account_home_feed.regenerating? ? 206 : 200
   end
 
   private
@@ -30,7 +30,8 @@ class Api::V1::Timelines::HomeController < Api::BaseController
     account_home_feed.get(
       limit_param(DEFAULT_STATUSES_LIMIT),
       params[:max_id],
-      params[:since_id]
+      params[:since_id],
+      params[:min_id]
     )
   end
 
@@ -51,7 +52,7 @@ class Api::V1::Timelines::HomeController < Api::BaseController
   end
 
   def prev_path
-    api_v1_timelines_home_url pagination_params(since_id: pagination_since_id)
+    api_v1_timelines_home_url pagination_params(min_id: pagination_since_id)
   end
 
   def pagination_max_id
@@ -60,9 +61,5 @@ class Api::V1::Timelines::HomeController < Api::BaseController
 
   def pagination_since_id
     @statuses.first.id
-  end
-
-  def regeneration_in_progress?
-    Redis.current.exists("account:#{current_account.id}:regeneration")
   end
 end
